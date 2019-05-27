@@ -72,7 +72,7 @@ class Query extends Runner
                 .'expected a normal array'
             );
         }
-        if ($this->source !== null) {
+        if (!$this->fields && $this->source) {
             $headers = $this->source->getHeaders();
             if (Validation::areArraysDifferent($fields, $headers)) {
                 throw new \Exception(
@@ -116,9 +116,7 @@ class Query extends Runner
     public function where(string $field, $dateFormat = null) : Query
     {
         $this->where = $field;
-        if ($dateFormat !== null) {
-            $this->dateFormat = $dateFormat;
-        }
+        $this->dateFormat = $dateFormat;
         return $this;
     }
 
@@ -133,7 +131,7 @@ class Query extends Runner
     public function value($value, $dateFormat = null) : Query
     {
         $valid = false;
-        if ($dateFormat !== null) {
+        if ($dateFormat) {
             // if the value is an array - then we're doing a range
             if (Validation::isNormalArray($value, 2)) {
                 $value = array_map(
@@ -156,14 +154,12 @@ class Query extends Runner
             if (!$valid) {
                 throw new Exceptions\InvalidDateValueException(
                     'Couldn\'t create datetime object from value/dateFormat '
-                    .'- please check'
+                    ."- please check $value : $dateFormat"
                 );
             }
-        } elseif (is_numeric($value)) {
-            $this->value = (float) $value;
-        } else {
-            $this->value = $value;
+            return $this;
         }
+        $this->value = is_numeric($value) ? (float) $value : $value;
         return $this;
     }
 
@@ -202,7 +198,7 @@ class Query extends Runner
     **/
     public function orderBy(string $key) : Query
     {
-        if ($this->source !== null) {
+        if ($this->source) {
             $headers = $this->source->getHeaders();
             if (!in_array($key, $headers)) {
                 throw new \Exception("$key is not in " . implode(', ', $headers));
@@ -253,11 +249,7 @@ class Query extends Runner
                     $row = array_intersect_key($row, $this->fields);
                 }
                 $this->remap($row);
-                if ($this->distinct !== null) {
-                    $hash = base64_encode(serialize($row));
-                    if (array_key_exists($hash, $this->distinct)) {
-                        continue;
-                    }
+                if ($this->distinct && $hash = $this->generateHash) {
                     $this->distinct[$hash] = true;
                 }
                 ($this->out) ? $this->out->writeDataRow($row) : $result[] = $row;
@@ -441,7 +433,7 @@ class Query extends Runner
      * @param array     &$result    The result array
      * @param int       $rows       A valid row count
      *
-     * @return null
+     * @return void
     **/
     private function closeOut(array &$result, int $rows)
     {
@@ -455,14 +447,13 @@ class Query extends Runner
                         $this->out->sort($this->orderBy);
                         $this->out->reset();
                     }
-                    $result = ['data' => stream_get_contents($this->out->fp)];
+                    $result = ['data' => stream_get_contents($this->out->_fp)];
                     $this->out->close();
                     break;
                 case 'file':
                     $this->out->close();
                     if ($this->orderBy && !$this->isdb) {
-                        $this->out->setSource($this->out->getSourceName(), ['modifier' => 'r']);
-                        //$this->out->setModifier('r');
+                        $this->out->setSource($this->out->getSourceName(), ['fileMode' => 'r']);
                         $this->out->sort($this->orderBy);
                     }
                     $result = ['data' => $rows];
@@ -486,5 +477,11 @@ class Query extends Runner
                 ]
             ];
         }
+    }
+
+    private function generateHash(array $row) : string
+    {
+        $hash = base64_encode(serialize($row));
+        return (!array_key_exists($hash, $this->distinct)) ? $hash : null;
     }
 }

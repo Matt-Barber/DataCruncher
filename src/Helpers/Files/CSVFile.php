@@ -30,27 +30,29 @@ class CSVFile extends DataFile implements DataInterface
     // file meta info
     private $headers = [];
     private $delimiter = ',';
-    private $encloser = "\"";
+    private $encloser = '"';
 
     // current chunk and the buffer
     private $chunk = [];
     private $buffer = '';
 
     // current write buffer and the length of the write buffer
-    private $write_buffer = [];
-    private $write_buffer_counter = 0;
+    private $writeBuffer = [];
+    private $writeBufferCounter = 0;
 
     /**
      * Sets the source for this CSV object, by specifying the file name and properties
-     * @param string    $filename   The name and path of the file
-     * @param array     $properties The properties for the source (i.e. ['modifier' => 'r'])
+     * @param string    $path   The name and path of the file
+     * @param array     $properties The properties for the source (i.e. ['fileMode' => 'r'])
      *
      * @return void
     **/
-    public function setSource(string $filename, array $properties = []) : void
+    public function setSource(string $path, array $properties = []) : void
     {
-        parent::setSource($filename, $properties);
-        if (stripos($this->modifier, 'r') !== false) {
+        parent::setSource($path, $properties);
+        $this->delimiter = $properties['delimiter'] ?? $this->delimiter;
+        $this->encloser = $properties['encloser'] ?? $this->encloser;
+        if ($this->read) {
             $this->open();
             $row = $this->getNextDataRow()->current();
             $this->close();
@@ -65,7 +67,7 @@ class CSVFile extends DataFile implements DataInterface
      *
      * @return array
     **/
-    public function getHeaders($force = true) : array
+    public function getHeaders(bool $force = true) : array
     {
         if ($force || $this->headers === []) {
             $this->open();
@@ -87,7 +89,7 @@ class CSVFile extends DataFile implements DataInterface
     **/
     public function getNextDataRow(bool $peek = false) : \Generator
     {
-        if (false === stripos($this->modifier, 'r')) {
+        if (!$this->read) {
             throw new Exceptions\InvalidFileException("File is not set to read mode");
         }
         if ($this->headers === []) {
@@ -102,25 +104,24 @@ class CSVFile extends DataFile implements DataInterface
      * Calls the _putcsv method to push a row to the output stream (if it exists)
      * This method returns null on success, and throws an error if there are any errors
      *
-     * @return null
+     * @return void
     **/
     public function writeDataRow(array $row) : void
     {
-        if ($this->fp !== null) {
-            if ($this->headers === []) {
-                $this->headers = array_keys($row);
-                if (false === fputcsv($this->fp, $this->headers, $this->delimiter, $this->encloser)) {
-                    throw new \RuntimeException("Couldn't write to {$this->getSourceName()}");
-                }
-            }
-            if (false === $this->putCSV($row)) {
-                throw new \RuntimeException("Couldn't write to {$this->getSourceName()}");
-            }
-        } else {
+        if (!$this->_fp) {
             throw new Exceptions\FilePointerInvalidException(
                 'The filepointer is null on this object, use class::open'
                 .' to open a new filepointer'
             );
+        }
+        if ($this->headers === []) {
+            $this->headers = array_keys($row);
+            if (false === fputcsv($this->_fp, $this->headers, $this->delimiter, $this->encloser)) {
+                throw new \RuntimeException("Couldn't write to {$this->getSourceName()}");
+            }
+        }
+        if (false === $this->putCSV($row)) {
+            throw new \RuntimeException("Couldn't write to {$this->getSourceName()}");
         }
     }
 
@@ -129,10 +130,10 @@ class CSVFile extends DataFile implements DataInterface
      *
      * @return void
     **/
-    public function open() : void
+    public function open() : bool
     {
       $this->headers = [];
-      parent::open();
+      return parent::open();
     }
 
     /**
@@ -151,7 +152,7 @@ class CSVFile extends DataFile implements DataInterface
      * Override the parent DataFile close method, because we're using chunked writing - we don't
      * necessarily know if the buffer is empty, so let's just write it to the output stream
      *
-     * @return null
+     * @return void
     **/
     public function close() : void
     {
@@ -162,23 +163,19 @@ class CSVFile extends DataFile implements DataInterface
     /**
      * Flush the write buffer (generally called before closing the file)
      *
-     * @return null
+     * @return void
     **/
     public function flushBuffer() : void
     {
-        if ($this->fp !== null) {
-            if (isset($this->write_buffer)) {
-                $meta = stream_get_meta_data($this->fp);
-                // todo : check if a or w in mode
-                if (Validation::multiStripos($meta['mode'], ['w', '+', 'a'], true)) {
-                    fwrite($this->fp, Validation::arrayToCSV($this->write_buffer, $this->delimiter, $this->encloser));
-                    $this->write_buffer = [];
+        if ($this->_fp) {
+            if (isset($this->writeBuffer)) {
+                if ($this->write) {
+                    fwrite($this->_fp, Validation::arrayToCSV($this->writeBuffer, $this->delimiter, $this->encloser));
+                    $this->writeBuffer = [];
                 }
             }
-            if (isset($this->chunk)) {
-                $this->chunk = [];
-                $this->buffer = '';
-            }
+            $this->chunk = [];
+            $this->buffer = '';
         }
     }
 
@@ -191,7 +188,7 @@ class CSVFile extends DataFile implements DataInterface
       * @return array
       *
     **/
-    public function sort(string $key) : array
+    public function sort(string $key) : ?array
     {
         // Timing
         $timer = new Stopwatch();
@@ -202,13 +199,13 @@ class CSVFile extends DataFile implements DataInterface
             $this->reset();
         }
         // dump the headers and load chunk 1
-        $a = $this->getNextDataRow(true)->current();
+        $this->getNextDataRow(true)->current();
         // Sort this csv into a set of sorted files
         $csvs = $this->createSortedChunks($key);
         $this->close();
         // setup an output file
         $output = new CSVFile();
-        $output->setSource($this->getSourceName(), ['modifier' => 'wb']);
+        $output->setSource($this->getSourceName(), ['fileMode' => 'wb']);
         $output->open();
         // create an array holding the current comparisons
         $cmps = array_fill(0, count($csvs), false);
@@ -298,28 +295,28 @@ class CSVFile extends DataFile implements DataInterface
          {
              usort(
                  $this->chunk,
-                 function($a, $b) use ($key) {
-                     $a = str_getcsv($a);
-                     $b = str_getcsv($b);
+                 function($left, $right) use ($key) {
+                     $left = str_getcsv($left);
+                     $right = str_getcsv($right);
                      return (
-                         (!isset($a[$key]) || !isset($b[$key])) ?
-                         -1 : $a[$key] <=> $b[$key]
+                         (!isset($left[$key]) || !isset($right[$key])) ?
+                         -1 : $left[$key] <=> $right[$key]
                      );
 
                  }
              );
              // add the CSV to our list of merge parts
              do {
-                 $filename = 'tmp/'.$this->generateRandomString();
-             } while (file_exists($filename));
-             // Create a new CSVFile with the filename
+                 $path = 'tmp/'.$this->generateRandomString();
+             } while (file_exists($path));
+             // Create a new CSVFile with the path
              $csv = new CSVFile();
-             $csv->setSource($filename, ['modifier' => 'wb+']);
+             $csv->setSource($path, ['fileMode' => 'wb']);
              $csv->open();
              // write the headers
-             fwrite($csv->fp, implode(",", $this->headers) . "\n");
+             fwrite($csv->_fp, implode(",", $this->headers) . "\n");
              // write the lines to the file
-             fwrite($csv->fp, implode(
+             fwrite($csv->_fp, implode(
                  "\n",
                  array_filter(
                      $this->chunk,
@@ -332,7 +329,7 @@ class CSVFile extends DataFile implements DataInterface
              $csv->close();
              // Create a new CSVFile from the same file in read mode
              $csv =  new CSVFile();
-             $csv->setSource($filename, ['modifier' => 'r']);
+             $csv->setSource($path, ['fileMode' => 'r']);
              $csv->open();
              // set the headers
              $csv->getNextDataRow(true)->current(); // dump the headers;
@@ -355,12 +352,11 @@ class CSVFile extends DataFile implements DataInterface
     private function getCsv(int $size, bool $peek = false) : array
     {
         if (empty($this->chunk)) {
-            if (feof($this->fp)) {
+            if (feof($this->_fp)) {
                 return [];
             }
             $this->getNextChunk($size);
         }
-        //$row = fgetcsv($this->fp, 1000, $this->delimiter, $this->encloser);
         $line = (!$peek) ? array_shift($this->chunk) : $this->chunk[0];
         return "" === ($line)  ? [] : array_map('trim', str_getcsv($line));
     }
@@ -373,20 +369,20 @@ class CSVFile extends DataFile implements DataInterface
     **/
     private function getNextChunk(int $size) : bool
     {
-        if (feof($this->fp)) {
+        if (feof($this->_fp)) {
             if (!$this->buffer) {
                 return false;
             }
             $this->chunk = $this->buffer;
         } else {
             // if we're empty get the next chunk using the previous buffer
-            $this->chunk = $this->buffer . fread($this->fp, $size);
+            $this->chunk = $this->buffer . fread($this->_fp, $size);
             $this->buffer = null;
         }
         // explode the chunk into lines
         $this->chunk = preg_split("/\\r\\n|\\r|\\n/", $this->chunk);
         // if this isn't the end of the file buffer out the last line
-        if (!feof($this->fp)) {
+        if (!feof($this->_fp)) {
             // buffer out the last line
             $this->buffer = array_pop($this->chunk);
         }
@@ -405,12 +401,12 @@ class CSVFile extends DataFile implements DataInterface
     private function putCSV(array $row) : bool
     {
         $result = true;
-        $this->write_buffer[] = $row;
-        ++$this->write_buffer_counter;
-        if ($this->write_buffer_counter >= self::WRITE_BUFFER_LIMIT) {
-            $result = (bool) fwrite($this->fp, Validation::arrayToCSV($this->write_buffer, $this->delimiter, $this->encloser));
-            $this->write_buffer = [];
-            $this->write_buffer_counter = 0;
+        $this->writeBuffer[] = $row;
+        ++$this->writeBufferCounter;
+        if ($this->writeBufferCounter >= self::WRITE_BUFFER_LIMIT) {
+            $result = (bool) fwrite($this->_fp, Validation::arrayToCSV($this->writeBuffer, $this->delimiter, $this->encloser));
+            $this->writeBuffer = [];
+            $this->writeBufferCounter = 0;
         }
         return $result;
     }

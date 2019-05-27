@@ -1,7 +1,8 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests;
+use PHPUnit\Framework\TestCase;
 
-class Mocks extends \PHPUnit_Framework_TestCase
+class Mocks extends TestCase
 {
    /**
     * Creates a MOCK of the Query class

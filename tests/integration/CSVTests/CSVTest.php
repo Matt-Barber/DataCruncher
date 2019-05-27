@@ -1,6 +1,6 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Integration\CSVTests;
-
+use PHPUnit\Framework\TestCase;
 use mfmbarber\DataCruncher\Config\Validation;
 use mfmbarber\DataCruncher\Helpers\DataSource;
 use mfmbarber\DataCruncher\Processor;
@@ -12,7 +12,7 @@ use mfmbarber\DataCruncher\Processor;
  * @package DataCruncher : Integration Tests
  *
 **/
-class CSVTest extends \PHPUnit_Framework_TestCase
+class CSVTest extends TestCase
 {
     private $file;
 
@@ -26,7 +26,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
     public function setup()
     {
         $this->sourceCSV = DataSource::generate('file', 'csv');
-        $this->sourceCSV->setSource($this->file, ['modifier' => 'r']);
+        $this->sourceCSV->setSource($this->file, ['fileMode' => 'r']);
         $this->sourceCSV->sort('id', true, false);
     }
 
@@ -95,7 +95,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $out = DataSource::generate('file', 'csv');
         $out->setSource(
             "{$this->dir}/OutputFiles/EmailContainsStumbleUpon.csv",
-            ['modifier' => 'w']
+            ['fileMode' => 'w']
         );
         $result = $query->from($this->sourceCSV)
             ->select(['id', 'first_name'])
@@ -128,7 +128,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $out = Datasource::generate('file', 'csv');
         $out->setSource(
             "{$this->dir}/OutputFiles/EmailContainsStumbleUpon.csv",
-            ['modifier' => 'w']
+            ['fileMode' => 'w']
         );
         $result = $query->from($this->sourceCSV)
             ->select(['id', 'first_name', 'ip_address'])
@@ -160,7 +160,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $out = DataSource::generate('file', 'xml', 'person', 'people');
         $out->setSource(
             "{$this->dir}/OutputFiles/EmailContainsStumbleUpon.xml",
-            ['modifier' => 'w']
+            ['fileMode' => 'w']
         );
         $result = $query->from($this->sourceCSV)
             ->select(['id', 'first_name'])
@@ -261,7 +261,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $out = Datasource::generate('file', 'csv');
         $out->setSource(
             "{$this->dir}/OutputFiles/EmailContainsStumbleUpon.csv",
-            ['modifier' => 'w']
+            ['fileMode' => 'w']
         );
         $result = $query->from($this->sourceCSV)
             ->select(['id', 'first_name', 'ip_address'])
@@ -297,7 +297,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $out = Datasource::generate('file', 'csv');
         $out->setSource(
             "{$this->dir}/OutputFiles/EmailContainsStumbleUpon.csv",
-            ['modifier' => 'w']
+            ['fileMode' => 'w']
         );
         $result = $query->from($this->sourceCSV)
             ->select(['id', 'email'])
@@ -351,7 +351,7 @@ class CSVTest extends \PHPUnit_Framework_TestCase
         $csv = Datasource::generate('file', 'csv');
         $csv->setSource(
             "{$this->dir}/InputFiles/MergeRows.csv",
-            ['modifier' => 'r']
+            ['fileMode' => 'r']
         );
         $result = $merger->from($this->sourceCSV)
             ->from($csv)

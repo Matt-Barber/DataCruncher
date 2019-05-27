@@ -1,13 +1,15 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit\Segmentation;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Segmentation\Merger as Merger;
 use mfmbarber\DataCruncher\Helpers\Files\CSVFile as CSVFile;
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 
-class MergerTest extends \PHPUnit_Framework_TestCase
+class MergerTest extends TestCase
 {
     private $root;
 
@@ -37,8 +39,8 @@ class MergerTest extends \PHPUnit_Framework_TestCase
         );
         $this->mockSourceCSV = new CSVFile();
         $this->mockMergeCSV = new CSVFile();
-        $this->mockSourceCSV->setSource('vfs://home/test', ['modifier' => 'r']);
-        $this->mockMergeCSV->setSource('vfs://home/test_out', ['modifier' => 'r']);
+        $this->mockSourceCSV->setSource('vfs://home/test', ['fileMode' => 'r']);
+        $this->mockMergeCSV->setSource('vfs://home/test_out', ['fileMode' => 'r']);
     }
 
     public function tearDown()

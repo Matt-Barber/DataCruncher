@@ -14,14 +14,16 @@ use mfmbarber\DataCruncher\Helpers\Files\CSVFile as CSVFile;
 
 class CSV extends CSVFile
 {
+    protected $read = true;
+    protected $write = true;
 
     /**
     * Override the setSource method so we're using a temp file
     * by default these have read/write states
     **/
-    public function setSource(string $location, array $properties) : void
+    public function setSource(string $path, array $properties) : void
     {
-        $this->filename = 'temp_file';
+        $this->path = 'temp_file';
     }
 
     /**
@@ -29,16 +31,16 @@ class CSV extends CSVFile
     *
     * @return void
     **/
-    public function open() : void
+    public function open() : bool
     {
-        if ($this->fp === null) {
-            $this->fp = tmpfile();
-        } else {
+        if ($this->_fp) {
             throw new Exceptions\FilePointerExistsException(
                 'A filepointer exists on this object, use class::close to'
                 .' close the current pointer '
             );
         }
+        $this->_fp = tmpfile();
+        return true;
     }
 
     /**

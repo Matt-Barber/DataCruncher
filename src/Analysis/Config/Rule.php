@@ -24,7 +24,7 @@ class Rule
     public $label = null;
     public $min = null;
     public $max = null;
-    public $deviation_threshold = null;
+    public $deviationThreshold = null;
     public $product = null;
   /**
      * Sets the field to calculate statistics on
@@ -120,7 +120,7 @@ class Rule
     **/
     public function getDeviation(int $threshold) : Rule
     {
-        $this->deviation_threshold = $threshold;
+        $this->deviationThreshold = $threshold;
         return $this->getAverage();
     }
 

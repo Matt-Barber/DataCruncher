@@ -1,12 +1,12 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Integration\StatisticsTests;
-
+use PHPUnit\Framework\TestCase;
 use mfmbarber\DataCruncher\Config\Validation;
 use mfmbarber\DataCruncher\Helpers\DataSource;
 use mfmbarber\DataCruncher\Processor;
 
 
-class StatisticTest extends \PHPUnit_Framework_TestCase
+class StatisticTest extends TestCase
 {
     private $dir;
 
@@ -27,7 +27,7 @@ class StatisticTest extends \PHPUnit_Framework_TestCase
         $statistics->addRule($rule);
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'CSVTests/InputFiles/1000row6columndata.csv';
-        $csv->setSource($file, ['modifier' => 'r']);
+        $csv->setSource($file, ['fileMode' => 'r']);
         $result = $statistics->from($csv)
             ->percentages()
             ->execute();
@@ -48,7 +48,7 @@ class StatisticTest extends \PHPUnit_Framework_TestCase
         $statistics->addRule($rule);
         $xml = DataSource::generate('file', 'xml', 'record', 'dataset');
         $file = $this->dir . 'XMLTests/InputFiles/1000row6fielddata.xml';
-        $xml->setSource($file, ['modifier' => 'r']);
+        $xml->setSource($file, ['fileMode' => 'r']);
         $result = $statistics->from($xml)
             ->percentages()
             ->execute();
@@ -72,7 +72,7 @@ class StatisticTest extends \PHPUnit_Framework_TestCase
         $statistics->addRule($rule);
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'CSVTests/InputFiles/1000row6columndata.csv';
-        $csv->setSource($file, ['modifier' => 'r']);
+        $csv->setSource($file, ['fileMode' => 'r']);
         $result = $statistics->from($csv)
             ->percentages()
             ->execute();

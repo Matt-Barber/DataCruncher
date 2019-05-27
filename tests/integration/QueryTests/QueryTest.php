@@ -1,12 +1,12 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Integration\QueryTests;
-
+use PHPUnit\Framework\TestCase;
 use mfmbarber\DataCruncher\Config\Validation;
 use mfmbarber\DataCruncher\Helpers\DataSource;
 use mfmbarber\DataCruncher\Processor;
 
 
-class QueryTest extends \PHPUnit_Framework_TestCase
+class QueryTest extends TestCase
 {
     private $dir;
 
@@ -24,7 +24,7 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         $query = Processor::generate('segmentation', 'query');
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'CSVTests/InputFiles/1000row6columndata.csv';
-        $csv->setSource($file, ['modifier' => 'r']);
+        $csv->setSource($file, ['fileMode' => 'r']);
         $result = $query->from($csv)
             ->select(['id', 'email'])
             ->where('ip_address')
@@ -48,7 +48,7 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         $query = Processor::generate('segmentation', 'query');
         $xml = DataSource::generate('file', 'xml', 'record', 'dataset');
         $file = $this->dir . 'XMLTests/InputFiles/1000row6fielddata.xml';
-        $xml->setSource($file, ['modifier' => 'r']);
+        $xml->setSource($file, ['fileMode' => 'r']);
         $result = $query->from($xml)
             ->select(['id', 'email'])
             ->where('ip_address')
@@ -67,13 +67,12 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testItShouldOutputCSVString()
     {
         $query = Processor::generate('segmentation', 'query');
         $xml = DataSource::generate('file', 'xml', 'record', 'dataset');
         $file = $this->dir . 'XMLTests/InputFiles/1000row6fielddata.xml';
-        $xml->setSource($file, ['modifier' => 'r']);
+        $xml->setSource($file, ['fileMode' => 'r']);
         $system = DataSource::generate('system', 'csv');
         $result = $query->from($xml)
             ->select(['id', 'email'])
@@ -99,8 +98,8 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'XMLTests/InputFiles/1000row6fielddata.xml';
         $o_file = $this->dir . 'QueryTests/OutputFiles/id990to1000.xml';
-        $xml->setSource($file, ['modifier' => 'r']);
-        $csv->setSource($o_file, ['modifier' => 'w']);
+        $xml->setSource($file, ['fileMode' => 'r']);
+        $csv->setSource($o_file, ['fileMode' => 'w']);
         $result = $query->from($xml)
             ->select(['email'])
             ->where('id')
@@ -123,8 +122,8 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'XMLTests/InputFiles/1000row6fielddata.xml';
         $o_file = $this->dir . 'QueryTests/OutputFiles/id990to1000.xml';
-        $xml->setSource($file, ['modifier' => 'r']);
-        $csv->setSource($o_file, ['modifier' => 'w']);
+        $xml->setSource($file, ['fileMode' => 'r']);
+        $csv->setSource($o_file, ['fileMode' => 'w']);
         $result = $query->from($xml)
             ->select(['email', 'first_name'])
             ->where('id')
@@ -197,8 +196,8 @@ class QueryTest extends \PHPUnit_Framework_TestCase
         $csv = DataSource::generate('file', 'csv');
         $file = $this->dir . 'CSVTests/InputFiles/1000row6columndata.csv';
         $o_file = $this->dir . 'QueryTests/OutputFiles/id999to1000.xml';
-        $csv->setSource($file, ['modifier' => 'r']);
-        $xml->setSource($o_file, ['modifier' => 'w']);
+        $csv->setSource($file, ['fileMode' => 'r']);
+        $xml->setSource($o_file, ['fileMode' => 'w']);
         $result = $query->from($csv)
             ->select(['email'])
             ->where('id')

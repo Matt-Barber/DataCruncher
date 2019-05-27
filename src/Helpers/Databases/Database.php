@@ -47,7 +47,7 @@ class Database implements DataInterface
      * @param string    $db             The name of the database
      * @param array     $properties     A hash table defining specific properties
      *                                  This must contain username, password and table
-     * @return null
+     * @return void
     **/
     public function setSource(string $db, array $properties) : void
     {
@@ -82,7 +82,7 @@ class Database implements DataInterface
      *
      * @param string    $table  The table to point to
      *
-     * @return null
+     * @return void
     **/
     public function setTable(string $table) : void
     {
@@ -113,6 +113,13 @@ class Database implements DataInterface
     }
 
 
+    /**
+     * Given a field name, return the type for this field (loosely)
+     *
+     * @param string    $field  A field in the table
+     *
+     * @return string
+    **/
     public function getFieldType(string $field) : string
     {
         $sql = "SELECT $field FROM {$this->table} LIMIT 1";
@@ -128,49 +135,57 @@ class Database implements DataInterface
      * @param bool  $reconnect  Optionally force a reconnection if the connection is already open
      *                          i.e. changing DSN then reconnecting
      *
-     * @return null
+     * @return void
     **/
-    public function open(bool $reconnect = false) : void
+    public function open(bool $reconnect = false) : bool
     {
-        if ($this->connection === null || $reconnect) {
-            try {
-                $this->connection = new \PDO($this->dsn, $this->username, $this->password);
-            } catch (\PDOException $e) {
-                throw new \PDOException(
-                    "Couldn't establish connection using {$this->dsn} is the server running?"
-                );
-            }
-        } else {
+        if ($this->connection !== null && !$reconnect) {
             throw new \PDOException("Connection is already active");
         }
-
+        try {
+            $this->connection = new \PDO($this->dsn, $this->username, $this->password);
+            return true;
+        } catch (\PDOException $e) {
+            throw new \PDOException(
+                "Couldn't establish connection using {$this->dsn} is the server running?"
+            );
+        }
     }
 
     /**
      * Kill a connection object
      *
-     * @return null
+     * @return void
     **/
     public function close() : void
     {
-        if ($this->connection !== null) {
-            $this->connection = null;
-        } else {
+        if ($this->connection === null) {
             throw new \PDOException("No connection active");
         }
+        $this->connection = null;
+    }
+
+    /**
+     * Reset the result
+     *
+     * @return void
+    **/
+    public function reset() : void
+    {
+      throw new \Exception("Not implemented");
     }
 
     /**
      * Sort the data by a given key for each query
      * @param string    $key    A valid key in the table
     **/
-    public function sort($key) : void
+    public function sort(string $key) : ?array
     {
-        if (in_array($key, $this->getHeaders())) {
-            $this->sortKey = $key;
-        } else {
+        if (!in_array($key, $this->getHeaders())) {
             throw new \PDOException("$key is not a header in the table");
         }
+        $this->sortKey = $key;
+        return null;
     }
 
     /**
@@ -182,7 +197,7 @@ class Database implements DataInterface
      * @param string    $condition  The condition to execute
      * @param mixed     $value      The value for the condition
      *
-     * @return null
+     * @return void
     **/
     public function query($fields, $where = null, $condition = null, $value = null)
     {
@@ -231,9 +246,8 @@ class Database implements DataInterface
     {
         if ($this->query !== null && ($line = $this->query->fetch(\PDO::FETCH_ASSOC))) {
             yield $line;
-        } else {
-            return [];
         }
+        return [];
     }
 
     /**

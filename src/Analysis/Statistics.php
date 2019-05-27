@@ -22,7 +22,6 @@ class Statistics extends Runner
     private $type = 'TOTAL';
     private $round;
     private $rules = [];
-    private $option = null;
 
     /**
      * Sets the type of response to percentage rather than totals
@@ -126,7 +125,7 @@ class Statistics extends Runner
      * @param array     $row        The row to test
      * @param object     $rule       The rule
      *
-     * @return null
+     * @return void
     **/
     public function processRow(array &$result, array $row, Rule $rule) : void
     {
@@ -152,7 +151,7 @@ class Statistics extends Runner
     private function convertToPercent(array &$results, int $total) : Void
     {
         foreach ($results as &$result) {
-            foreach ($result as $key => &$value) {
+            foreach ($result as &$value) {
                 $value = (100 / $total) * $value;
                 if ($this->round) $value = round($value, $this->round);
             }
@@ -173,7 +172,7 @@ class Statistics extends Runner
     {
         // process any single value results
         foreach ($this->rules as $rule) {
-            if (null !== $rule->deviation_threshold) {
+            if (null !== $rule->deviationThreshold) {
                 foreach ($results[$rule->label] as $key => &$value) {
                     $value = $key - ($rule->product / $total);
                 }

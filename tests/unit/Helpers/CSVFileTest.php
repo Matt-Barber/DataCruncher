@@ -1,11 +1,13 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit\Helpers;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Helpers\Files\CSVFile as CSVFile;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 
-class CSVFileTest extends \PHPUnit_Framework_TestCase
+class CSVFileTest extends TestCase
 {
     private $root;
 
@@ -23,7 +25,7 @@ class CSVFileTest extends \PHPUnit_Framework_TestCase
             ."tony.stark@avengers.com, tony, \"red, gold\", 02/05/1990, 25\n"
         );
         $this->mockSourceCSV = new CSVFile();
-        $this->mockSourceCSV->setSource('vfs://home/test', ['modifier' => 'r']);
+        $this->mockSourceCSV->setSource('vfs://home/test', ['fileMode' => 'r']);
     }
 
     public function tearDown()
@@ -41,7 +43,7 @@ class CSVFileTest extends \PHPUnit_Framework_TestCase
             ->withContent('Locked File')
             ->at($this->root);
         $csv = new CSVFile();
-        $csv->setSource('vfs://home/locked', ['modifier' => 'r']);    
+        $csv->setSource('vfs://home/locked', ['fileMode' => 'r']);
     }
 
     /**
@@ -117,7 +119,7 @@ class CSVFileTest extends \PHPUnit_Framework_TestCase
     public function testItShouldThrowInvalidFileException()
     {
         $sourceFile = new CSVFile();
-        $sourceFile->setSource('FakeFile.csv', ['modifier' => 'r']);
+        $sourceFile->setSource('FakeFile.csv', ['fileMode' => 'r']);
     }
 
     /**
@@ -145,7 +147,7 @@ class CSVFileTest extends \PHPUnit_Framework_TestCase
     public function testItShouldThrowAnErrorIfAlreadyOpen()
     {
         $csv = new CSVFile();
-        $csv->setSource('vfs://home/test', ['modifier' => 'r']);
+        $csv->setSource('vfs://home/test', ['fileMode' => 'r']);
         $csv->open();
         $csv->open();
     }
@@ -214,7 +216,7 @@ class CSVFileTest extends \PHPUnit_Framework_TestCase
             ."DPA Rules apply"
         );
         $this->mockSourceCSV = new CSVFile();
-        $this->mockSourceCSV->setSource('vfs://home/invalidCSV', ['modifier' => 'r']);
+        $this->mockSourceCSV->setSource('vfs://home/invalidCSV', ['fileMode' => 'r']);
 
     }
     public function testItShouldAllowUsToPeekAtData()

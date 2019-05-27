@@ -16,89 +16,94 @@ use mfmbarber\DataCruncher\Config\Validation;
 abstract class DataFile
 {
 
-    public $fp = null;
+    public $_fp = null;
 
-    protected $modifier = 'r';
-    protected $filename = '';
+    protected $fileMode;
+    protected $path;
+    protected $read = false;
+    protected $write = false;
+
+    const READ_MODES = ['r', 'r+', 'rb', 'rb+', 'w+', 'wb+', 'a+', 'x+', 'c+'];
+    const WRITE_MODES = ['r+', 'rb+', 'w', 'w+', 'wb', 'wb+', 'a', 'a+', 'x', 'x+', 'c', 'c+'];
 
     /**
      * Sets the source  file of the Manipulator object, if valid sets attributes
      *
-     * @param string $filename   The name of the file to set as the source
-     * @param array  $properties Data properties, modifier, encloser, delimiter
+     * @param string $path   The name of the file to set as the source
+     * @param array  $properties Data properties, fileMode, encloser, delimiter
      *
-     * @return null
+     * @return void
     **/
-    public function setSource(string $filename, array $properties = []) : void
+    public function setSource(string $path, array $properties = []) : void
     {
-        if (isset($properties['modifier'])) {
-            $this->modifier = strtolower($properties['modifier']);
-        }
-        if (false !== strpos('r', $this->modifier) && !$this->readable($filename)) {
-            if (!$this->fileExists($filename)) {
+        $this->fileMode = strtolower($properties['fileMode'] ?? 'r+');
+        if (in_array($this->fileMode, self::READ_MODES)) {
+            if (!$this->fileExists($path)) {
                 throw new Exceptions\InvalidFileException("File doesn't exist");
             }
-            throw new Exceptions\InvalidFileException("File is not readable");
-        }
-        if ((false !== strpos('w', $this->modifier) || false !== strpos('a', $this->modifier))) {
-            if (!file_exists($filename)) {
-                touch($filename);
+            if (!$this->readable($path)) {
+                throw new Exceptions\InvalidFileException("File is not readable");
             }
-            if (!$this->writable($filename)) {
+            $this->read = true;
+        }
+        if (in_array($this->fileMode, self::WRITE_MODES)) {
+            if (!$this->fileExists($path)) {
+                touch($path);
+            }
+            if (!$this->writable($path)) {
                 throw new Exceptions\InvalidFileException("File is not writable");
             }
+            $this->write = true;
         }
-        $this->filename = $filename;
-        if (isset($properties['delimiter'])) {
-            $this->delimiter = $properties['delimiter'];
-        }
-        if (isset($properties['encloser'])) {
-            $this->encloser = $properties['encloser'];
+        $this->path = $path;
+
+        if (!$this->read && !$this->write) {
+            throw new Exceptions\InvalidFileException("{$this->fileMode} is not a valid fileMode");
         }
     }
 
     /**
-     * Update the modifier
+     * Update the fileMode
      *
-     * @param string $modifier  The modifier to apply
+     * @param string $fileMode  The fileMode to apply
     **/
-    public function setModifier(string $modifier) : void
+    public function setfileMode(string $fileMode) : void
     {
-        $this->setSource($this->filename, ['modifer' => $modifier]);
+        $this->setSource($this->path, ['modifer' => strtolower($fileMode)]);
     }
 
     /**
      * A local copy of fileExists to allow us to mock this function
 
-     * @param string    $filename   The name of the file to check
+     * @param string    $path   The name of the file to check
      *
      * @return bool
     **/
-    public function fileExists(string $filename) : bool
+    public function fileExists(string $path) : bool
     {
-        return (bool) file_exists($filename);
+        return (bool) file_exists($path);
     }
 
     /**
      * We abstract this method as we might change our check for writable in future
-     * @param string $filename  The name of the file to check is writable
+     * @param string $path  The name of the file to check is writable
      *
      * @return bool
     **/
-    public function writable(string $filename) : bool
+    public function writable(string $path) : bool
     {
-        return (bool) is_writable($filename);
+        return (bool) is_writable($path);
     }
 
     /**
      * We abstract this method as we might change our check for readable in future
-     * @param string $filename  The name of the file to check is writable
+     * @param string $path  The name of the file to check is writable
      *
      * @return bool
     **/
-    public function readable(string $filename) : bool
+    public function readable(string $path) : bool
     {
-        return (bool) is_readable($filename);
+        return (bool) is_readable($path);
     }
 
     /**
@@ -112,32 +117,31 @@ abstract class DataFile
     }
 
     /**
-     * Returns the current filename tied to this object
+     * Returns the current path tied to this object
      *
      * @return string
      *
     **/
     public function getSourceName() : string
     {
-        return $this->filename;
+        return $this->path;
     }
 
     /**
      * Open is a method that sets a local file pointer
      *
-     * @return null
+     * @return void
     **/
-    public function open()
+    public function open() : bool
     {
-        if ($this->fp === null) {
-            $this->fp = fopen($this->filename, $this->modifier);
+        if ($this->_fp === null) {
+            $this->_fp = fopen($this->path, $this->fileMode);
             return true;
-        } else {
-            throw new Exceptions\FilePointerExistsException(
-                'A filepointer exists on this object, use class::close to'
-                .' close the current pointer'
-            );
         }
+        throw new Exceptions\FilePointerExistsException(
+            'A filepointer exists on this object, use class::close to'
+            .' close the current pointer'
+        );
     }
 
     /**
@@ -145,34 +149,34 @@ abstract class DataFile
      *
      * @return void
      */
-    public function reset()
+    public function reset() : void
     {
-        if ($this->fp !== null) {
-            rewind($this->fp);
-        } else {
-            throw new Exceptions\FilePointerInvalidException(
-                'The filepointer is null on this object, use class::open'
-                .' to open a new filepointer'
-            );
+        if ($this->_fp !== null) {
+            rewind($this->_fp);
+            return;
         }
+        throw new Exceptions\FilePointerInvalidException(
+            'The filepointer is null on this object, use class::open'
+            .' to open a new filepointer'
+        );
     }
-    
+
     /**
      * Close closes the file pointer attribute
      *
      * @return void
     **/
-    public function close()
+    public function close() : void
     {
-        if ($this->fp !== null) {
-            fclose($this->fp);
-            $this->fp = null;
-        } else {
-            throw new Exceptions\FilePointerInvalidException(
-                'The filepointer is null on this object, use class::open'
-                .' to open a new filepointer'
-            );
+        if ($this->_fp !== null) {
+            fclose($this->_fp);
+            $this->_fp = null;
+            return;
         }
+        throw new Exceptions\FilePointerInvalidException(
+            'The filepointer is null on this object, use class::open'
+            .' to open a new filepointer'
+        );
     }
 
     /**

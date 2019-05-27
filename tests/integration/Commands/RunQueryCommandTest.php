@@ -2,12 +2,12 @@
 namespace mfmbarber\DataCruncher\Tests\Integration\Command;
 
 use mfmbarber\DataCruncher\Commands\RunQueryCommand;
-
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 
-class RunQueryCommandTest extends \PHPUnit_Framework_TestCase
+class RunQueryCommandTest extends TestCase
 {
     private $dir;
 

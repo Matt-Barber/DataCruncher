@@ -1,13 +1,15 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit\Analysis\Config;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Analysis\Config\Rule as Rule;
 use mfmbarber\DataCruncher\Helpers\Files\CSVFile as CSVFile;
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 
-class RuleTest extends \PHPUnit_Framework_TestCase
+class RuleTest extends TestCase
 {
     /**
      * Test setting the field for the rule

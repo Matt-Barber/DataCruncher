@@ -1,13 +1,17 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit\Helpers;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Helpers\System\CSV as CSV;
 use mfmbarber\DataCruncher\Helpers\Files\CSVFile;
+
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
+
 use mfmbarber\DataCruncher\Segmentation\Query as Query;
 
-class CSVSystemTest extends \PHPUnit_Framework_TestCase
+class CSVSystemTest extends TestCase
 {
     private $root;
 
@@ -25,7 +29,7 @@ class CSVSystemTest extends \PHPUnit_Framework_TestCase
             ."tony.stark@avengers.com, tony, \"red, gold\", 02/05/1990, 25\n"
         );
         $this->mockSourceCSV = new CSV();
-        //$this->mockSourceCSV->setSource('vfs://home/test', ['modifier' => 'r']);
+        //$this->mockSourceCSV->setSource('vfs://home/test', ['fileMode' => 'r']);
     }
 
     public function tearDown()

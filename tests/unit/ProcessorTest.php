@@ -1,6 +1,8 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Processor as Processor;
 
 use Faker\Generator;
@@ -9,7 +11,7 @@ use mfmbarber\DataCruncher\Segmentation\{Query, Split, Merger};
 use mfmbarber\DataCruncher\Analysis\{Statistics, Find, Config};
 
 
-class ProcessorTest extends \PHPUnit_Framework_TestCase
+class ProcessorTest extends TestCase
 {
     public function testItShouldGenerateAQueryObject()
     {

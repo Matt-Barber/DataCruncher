@@ -10,12 +10,14 @@
 
 namespace mfmbarber\DataCruncher\Tests\Unit\Helpers;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Tests\Mocks as Mocks;
 use mfmbarber\DataCruncher\Helpers\Files\XMLFile as XMLFile;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 
-class XMLFileTest extends \PHPUnit_Framework_TestCase
+class XMLFileTest extends TestCase
 {
 
     private $root;
@@ -79,8 +81,8 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
         vfsStream::url('/home/test_out', 0777);
         $this->mockSourceXML = new XMLFile('food', 'breakfast_menu');
         $this->mockOutXML = new XMLFile('food', 'breakfast_menu');
-        $this->mockSourceXML->setSource('vfs://home/test', ['modifier' => 'r']);
-        $this->mockOutXML->setSource('vfs://home/test_out', ['modifier' => 'w']);
+        $this->mockSourceXML->setSource('vfs://home/test', ['fileMode' => 'r']);
+        $this->mockOutXML->setSource('vfs://home/test_out', ['fileMode' => 'w']);
     }
 
     /**
@@ -101,7 +103,7 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
     **/
     public function testItShouldReturnFirstBreakfastMenuElement()
     {
-        $this->mockSourceXML->open(true, 'food', 'breakfast_menu');
+        $this->mockSourceXML->open();
         $this->assertEquals(
             $this->mockSourceXML->getNextDataRow()->current(),
             [
@@ -133,17 +135,24 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
      */
     public function testItShouldWriteALineToAnXMLFile()
     {
-        $this->mockOutXML->open(false, 'test', 'data');
-        $this->mockOutXML->writeDataRow(
+        vfsStream::url('/home/heros', 0777);
+        $testNewXML = new XMLFile('hero', 'avengers');
+        $testNewXML->setSource('vfs://home/heros', ['fileMode' => 'w']);
+        $testNewXML->open();
+        $testNewXML->writeDataRow(
             [
                 'name' => 'tony',
                 'hero' => 'iron man'
             ]
         );
-        $this->mockOutXML->close();
-        $this->mockOutXML->open(true, 'test', 'data');
+        $testNewXML->close();
+        unset($testNewXML);
+
+        $testNewXML = new XMLFile('hero', 'avengers');
+        $testNewXML->setSource('vfs://home/heros', ['fileMode' => 'r']);
+        $testNewXML->open();
         $this->assertEquals(
-            $this->mockOutXML->getNextDataRow()->current(),
+            $testNewXML->getNextDataRow()->current(),
             [
                 'name' => 'tony',
                 'hero' => 'iron man'
@@ -157,7 +166,7 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
      */
     public function testItShouldReturnFalseIfWritingEmptyRow()
     {
-        $this->mockOutXML->open(false, 'test', 'data');
+        $this->mockOutXML->open();
         $this->assertFalse(
             $this->mockOutXML->writeDataRow([])
         );
@@ -185,9 +194,9 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
     public function testItShouldThrowAnErrorIfAlreadyOpen()
     {
         // initial open
-        $this->mockSourceXML->open(true, 'food', 'breakfast_menu');
+        $this->mockSourceXML->open();
         // subsequent open
-        $this->mockSourceXML->open(true, 'food', 'breakfast_menu');
+        $this->mockSourceXML->open();
     }
 
     /**
@@ -195,7 +204,7 @@ class XMLFileTest extends \PHPUnit_Framework_TestCase
      */
     public function testItShouldResetTheFilePointerToTheStartOfTheFile()
     {
-        $this->mockSourceXML->open(true, 'food', 'breakfast_menu');
+        $this->mockSourceXML->open();
         $this->mockSourceXML->getNextDataRow()->current();
         $this->mockSourceXML->getNextDataRow()->next();
         $this->mockSourceXML->reset();

@@ -48,7 +48,7 @@ class RunStatsCommand extends Command
      * @param InputInterface    $input      The input interface for the console object
      * @param OutputInterface   $output     The output interface for the console object
      *
-     * @return null
+     * @return void
     **/
     protected function execute(InputInterface $input, OutputInterface $output) : void
     {
@@ -132,14 +132,14 @@ class RunStatsCommand extends Command
      * @param InputInterface    $input      The input interface for the console object
      * @param OutputInterface   $output     The output interface for the console object
      * @param string            $arg        The name of the argument passed to the command
-     * @param string            $modifier   The modifier to use, i.e. r or w
+     * @param string            $fileMode   The fileMode to use, i.e. r or w
      *
      * @return DataInterface
     **/
-    private function validateData(InputInterface $input, string $arg, string $modifier) : ?DataInterface
+    private function validateData(InputInterface $input, string $arg, string $fileMode) : ?DataInterface
     {
         $data = null;
-        if (stripos($modifier, 'w') !== false || file_exists($arg)) {
+        if (stripos($fileMode, 'w') !== false || file_exists($arg)) {
             switch (pathinfo($arg, PATHINFO_EXTENSION)) {
                 case 'csv':
                     $data = DataSource::generate('file', 'csv');
@@ -151,7 +151,7 @@ class RunStatsCommand extends Command
                 default:
                     throw new \InvalidArgumentException('Only CSV / XML files allowed');
             }
-            $data->setSource($arg, ['modifier' => $modifier]);
+            $data->setSource($arg, ['fileMode' => $fileMode]);
         }
         return $data;
     }

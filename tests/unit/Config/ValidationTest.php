@@ -1,9 +1,11 @@
 <?php
 namespace mfmbarber\DataCruncher\Tests\Unit\Config;
 
+use PHPUnit\Framework\TestCase;
+
 use mfmbarber\DataCruncher\Config\Validation as Validation;
 
-class ValidationTest extends \PHPUnit_Framework_TestCase
+class ValidationTest extends TestCase
 {
     /**
      * Test the validation function isNormalArray

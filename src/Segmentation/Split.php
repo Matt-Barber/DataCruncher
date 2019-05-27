@@ -71,14 +71,14 @@ class Split
      *
      * @return array
     **/
-    public function execute(array $outfiles = [], $node_name = '', $start_element = '') : array
+    public function execute(array $outfiles = [], $nodeName = '', $startElement = '') : array
     {
         $result = [];
         $set = [];
         $ticker = false; // horizontal ticker
 
-        Validation::openDataFile($this->source, $node_name, $start_element);
-        if (($writeOutFiles = $this->openOutFiles($outfiles, $node_name, $start_element, true))) {
+        Validation::openDataFile($this->source, $nodeName, $startElement);
+        if (($writeOutFiles = $this->openOutFiles($outfiles, $nodeName, $startElement, true))) {
             $result = array_fill(0, count($outfiles), 0);
         }
         if ($this->direction === 'VERTICAL') {
@@ -125,13 +125,13 @@ class Split
     /**
      * Opens an array of data sources
      * @param array     $outfiles       to open (by reference)
-     * @param string    $node_name      are the names of the nodes if the file being opened is xml
+     * @param string    $nodeName      are the names of the nodes if the file being opened is xml
      * @param string    $start_elemnent is the parent element of the data nodes if the file is xml
      *
      * @throws InvalidArgumentException
      * @return Boolean
     **/
-    private function openOutFiles(&$outfiles, $node_name = '', $start_element = '') : bool
+    private function openOutFiles(&$outfiles, $nodeName = '', $startElement = '') : bool
     {
         if ($outfiles == []) {
             return false;
@@ -154,7 +154,7 @@ class Split
             );
         }
         foreach ($outfiles as &$outfile) {
-            Validation::openDataFile($outfile, $node_name, $start_element);
+            Validation::openDataFile($outfile, $nodeName, $startElement);
         }
         return true;
     }
